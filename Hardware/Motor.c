@@ -5,9 +5,11 @@
    规定 PA8 - 左上轮C  B右上轮 - PA1
 	    PA9 - 左下轮D  A右下轮 - PA0
 		
-		PA10 - 左IN1   右IN1 - PA3
-		PA11 - 左IN2   右IN2 - PA2
+		PA10(IN1) - 左DIN1 CIN2  |  右AIN1 BIN2 - PA3(IN1)
+		PA11(IN2) - 左DIN2 DIN1  |  右AIN2 BIN1 - PA2(IN2)
+		注:  IN1 IN2 控制电机转动方向 A/B/C/D INx 对应端口实际连接的电机驱动模块的引脚名称
 
+   控制电机转动方向对照表：
    | 端口 | IN1 | IN2 |  输出结果 |
    |      |  -  |  +  |   正向    |
    |	  |  +  |  -  |   逆向    |
