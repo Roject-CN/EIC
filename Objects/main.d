@@ -29,3 +29,6 @@
 .\objects\main.o: .\Library\stm32f10x_wwdg.h
 .\objects\main.o: .\Library\misc.h
 .\objects\main.o: .\Hardware\Motor.h
+.\objects\main.o: .\Hardware\OLED.h
+.\objects\main.o: .\Hardware\Trace.h
+.\objects\main.o: .\System\Delay.h
