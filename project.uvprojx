@@ -585,6 +585,11 @@
               <FilePath>.\Library\stm32f10x_rcc.c</FilePath>
             </File>
             <File>
+              <FileName>stm32f10x_rtc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Library\stm32f10x_rtc.h</FilePath>
+            </File>
+            <File>
               <FileName>stm32f10x_rcc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Library\stm32f10x_rcc.h</FilePath>
@@ -593,11 +598,6 @@
               <FileName>stm32f10x_rtc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Library\stm32f10x_rtc.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f10x_rtc.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Library\stm32f10x_rtc.h</FilePath>
             </File>
             <File>
               <FileName>stm32f10x_sdio.c</FileName>
@@ -689,6 +689,16 @@
               <FileType>5</FileType>
               <FilePath>.\System\Delay.h</FilePath>
             </File>
+            <File>
+              <FileName>Timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\System\Timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>Timer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\System\Timer.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -738,6 +748,16 @@
               <FileName>Trace.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\Trace.h</FilePath>
+            </File>
+            <File>
+              <FileName>LEDB.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\hardware\LEDB.c</FilePath>
+            </File>
+            <File>
+              <FileName>LEDB.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\LEDB.h</FilePath>
             </File>
           </Files>
         </Group>
