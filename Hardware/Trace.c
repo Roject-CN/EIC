@@ -1,7 +1,6 @@
 #include "stm32f10x.h"                  // Device header
-#include "OLED.h"
-#include "Delay.h"
 
+#include "Delay.h"
 typedef enum {
     CTRL_A = GPIO_Pin_4,
     CTRL_B = GPIO_Pin_5, 
@@ -28,10 +27,12 @@ Control the channel by A B C （PA4 PA5 PA6）
 |  1  | x | x | x |   无    |
 */
 const uint16_t CONTROL[3] = { CTRL_A, CTRL_B, CTRL_C }; 
-uint8_t digital_signals[7] = {0}; //存放数字灰度传感器的信号 
+uint8_t digital_signals[7] = {1, 1, 1, 1, 1, 1, 1}; //存放数字灰度传感器的信号 
+
+int16_t digitals_K[7] = {-3, -2, -1, 0, 1, 2, 3}; // 对应 1 2 3 4 5 6 7 通道的K系数
 
 void Trace_Init(void){
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
 	
 	//配置GPIO A B C
@@ -85,14 +86,43 @@ void Reset_Control(void){
 	*/
 }
 
-uint8_t* Trace_Get_Digit(void){
-	//返回一个指针，指涉 digital_signals 的地址方便主函数查询
+void Trace_Get_Digit(void){
 	//通道1-7
 	for (int i = 1; i < 8; i++){
 		Reset_Control();
 		Control_Channel(i, 0);
-		digital_signals[i - 1] = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_7);
+		digital_signals[ i - 1] = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_7);
 	}
+	// 通过控制 A B C 端口控制芯片公共输出的通道1-7，然后再读取相应通道的电位
+	// 1 为 熄灯 即没有检测到黑线（表明其在空白区域）
+	// 0 为 亮灯 即检测到黑线
 	
-	return digital_signals;
+	
 }
+
+float Trace_Get_Status(void){
+	Trace_Get_Digit(); //获取各个通道
+	float status = 0; //status 表明循迹的状态
+	int index = 0;
+	for (int i = 0; i < 7; i++){
+		index = digital_signals[i] == 0 ? index + 1 : index;
+		status += (float)(1 - digital_signals[i]) * (float)digitals_K[i] ;
+		//digitals_K[7] = {-3, -2, -1, 0, 1, 2, 3}; // 对应 1 2 3 4 5 6 7 通道的K系数
+	}
+	/*
+	循迹算法：
+	index 表示 亮着的传感器的总数
+	status += 亮着的通道的系数
+	最后status = status / index 得到平均系数
+	因此离中间点越远则 status 越大
+	*/
+	
+	if (index == 0) return 100.0; //如果没有亮着的传感器，即传感器此时在空白位置上，返回 100.0
+	
+	status /= (float)index;
+	
+	
+	return status;
+}
+
+

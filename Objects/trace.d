@@ -28,5 +28,4 @@
 .\objects\trace.o: .\Library\stm32f10x_usart.h
 .\objects\trace.o: .\Library\stm32f10x_wwdg.h
 .\objects\trace.o: .\Library\misc.h
-.\objects\trace.o: Hardware\OLED.h
 .\objects\trace.o: .\System\Delay.h

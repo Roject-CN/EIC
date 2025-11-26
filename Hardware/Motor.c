@@ -1,12 +1,11 @@
 #include "stm32f10x.h"                  // Device header
 #include "PWM.h"
-
  /*
-   规定 PA8 - 左上轮C  B右上轮 - PA1
-	    PA9 - 左下轮D  A右下轮 - PA0
+   规定 PB6 - 左上轮C  B右上轮 - PA1
+	    PB7 - 左下轮D  A右下轮 - PA0
 		
-		PA10(IN1) - 左DIN1 CIN2  |  右AIN1 BIN2 - PA3(IN1)
-		PA11(IN2) - 左DIN2 DIN1  |  右AIN2 BIN1 - PA2(IN2)
+		PB4(IN1) - 左CIN1 CIN2  |  右AIN1 BIN2 - PA3(IN1)
+		PB5(IN2) - 左DIN2 DIN1  |  右AIN2 BIN1 - PA2(IN2)
 		注:  IN1 IN2 控制电机转动方向 A/B/C/D INx 对应端口实际连接的电机驱动模块的引脚名称
 
    控制电机转动方向对照表：
@@ -28,8 +27,8 @@
   TIM2_CH4 - PA3 
 */
 
-//void Motor_Set_Speed_L(int32_t speed);
-//void Motor_Set_Speed_R(int32_t speed);
+//void Motor_Set_Speed_L(int speed);
+//void Motor_Set_Speed_R(int speed);
 //// 提前声明
 
 
@@ -37,18 +36,41 @@ void Motor_Init(void){
 	PWM_Init();
 	
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	
+	// 使能AFIO时钟
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+	// 释放JTAG的PB4（NJTRST）和PB3（JTDO），但保留SWD
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+	
 	GPIO_InitTypeDef GPIO_Initstructure;
 	GPIO_Initstructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Initstructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_2 | GPIO_Pin_3;
+	GPIO_Initstructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_Initstructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_Initstructure);
 	
-	GPIO_ResetBits(GPIOA, GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_2 | GPIO_Pin_3);
+	
+	GPIO_Initstructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Initstructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5;
+	GPIO_Initstructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &GPIO_Initstructure);
+	
+	GPIO_ResetBits(GPIOA,  GPIO_Pin_2);
+	GPIO_ResetBits(GPIOA,  GPIO_Pin_3);
+	GPIO_ResetBits(GPIOB,  GPIO_Pin_4);
+	GPIO_ResetBits(GPIOB,  GPIO_Pin_5);
 }
 
-void Motor_Set_Speed_L(int32_t speed){
-	if(speed > 0) GPIO_SetBits(GPIOA, GPIO_Pin_11);
-	else GPIO_SetBits(GPIOA, GPIO_Pin_10);
+void Motor_Set_Speed_L(int speed){
+	if(speed > 0) {
+		GPIO_SetBits(GPIOB, GPIO_Pin_5);
+		GPIO_ResetBits(GPIOB, GPIO_Pin_4);
+	
+	}
+	else {
+		GPIO_SetBits(GPIOB, GPIO_Pin_4);
+		GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+	}
 	
     if (speed < 0) speed = -speed; //PWM只接受正值
 	if (speed > 1000) speed = 1000; // 若超出范围则将其设置为最大值
@@ -58,9 +80,17 @@ void Motor_Set_Speed_L(int32_t speed){
 	
 }
 
-void Motor_Set_Speed_R(int32_t speed){
-	if(speed > 0) GPIO_SetBits(GPIOA, GPIO_Pin_2);
-	else GPIO_SetBits(GPIOA, GPIO_Pin_3);
+void Motor_Set_Speed_R(int speed){
+	if(speed > 0) {
+		GPIO_SetBits(GPIOA, GPIO_Pin_2);
+		GPIO_ResetBits(GPIOA, GPIO_Pin_3);
+	
+	}
+	else {
+		GPIO_SetBits(GPIOA, GPIO_Pin_3);
+		GPIO_ResetBits(GPIOA, GPIO_Pin_2);
+	}
+	
 	
     if (speed < 0) speed = -speed; //PWM只接受正值
 	if (speed > 1000) speed = 1000; // 若超出范围则将其设置为最大值
@@ -69,7 +99,23 @@ void Motor_Set_Speed_R(int32_t speed){
 	PWM_SetCompareRD(speed);
 }
 
-void Motor_Move_Foward(int32_t speed){
+void Motor_Move_Foward(int speed){
+	
 	Motor_Set_Speed_L(speed);
 	Motor_Set_Speed_R(speed);
+}
+
+void Motor_Turn_Right(int speed){
+	Motor_Set_Speed_L(speed);
+	Motor_Set_Speed_R(0);
+}
+
+void Motor_Turn_Left(int speed){
+	Motor_Set_Speed_L(0);
+	Motor_Set_Speed_R(speed);
+}
+
+void Motor_Stop(void){
+	Motor_Set_Speed_L(0);
+	Motor_Set_Speed_R(0);
 }
