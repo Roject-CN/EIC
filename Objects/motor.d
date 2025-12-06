@@ -29,3 +29,5 @@
 .\objects\motor.o: .\Library\stm32f10x_wwdg.h
 .\objects\motor.o: .\Library\misc.h
 .\objects\motor.o: Hardware\PWM.h
+.\objects\motor.o: Hardware\Encoder.h
+.\objects\motor.o: Hardware\Trace.h

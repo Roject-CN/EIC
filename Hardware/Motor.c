@@ -1,5 +1,7 @@
 #include "stm32f10x.h"                  // Device header
 #include "PWM.h"
+#include "Encoder.h"
+#include "Trace.h"
  /*
    规定 PB6 - 左上轮C  B右上轮 - PA1
 	    PB7 - 左下轮D  A右下轮 - PA0
@@ -27,10 +29,15 @@
   TIM2_CH4 - PA3 
 */
 
-//void Motor_Set_Speed_L(int speed);
-//void Motor_Set_Speed_R(int speed);
-//// 提前声明
+//int Motor_encoder1 = 0;
+//int Motor_encoder2 = 0;
+#define SPEED_MOVE_FORWARD 600
+#define SPEED_TURN_I 450
+#define SPEED_TURN_K 25
 
+
+
+typedef enum { HOLD = 0, LEFT = 1, RIGHT = 2, FORWARD = 3, UNFINISED, FINISHED, EMPTY} MOTOR_STATE;
 
 void Motor_Init(void){
 	PWM_Init();
@@ -118,4 +125,130 @@ void Motor_Turn_Left(int speed){
 void Motor_Stop(void){
 	Motor_Set_Speed_L(0);
 	Motor_Set_Speed_R(0);
+}
+
+uint8_t Motor_Encoder_Left(int left_encoder){
+	int encoder = Encoder1_Get();
+	if ( encoder <= left_encoder){
+		Motor_Turn_Right(450);
+		return UNFINISED;
+	}
+	else{
+		Motor_Stop();
+		return FINISHED;
+	}
+}
+
+uint8_t Motor_Encoder_Right(int right_encoder){
+	int encoder = Encoder2_Get();
+	if (encoder <= right_encoder){
+		Motor_Turn_Left(450);
+		return UNFINISED;
+	}
+	else{
+		Motor_Stop();
+		return FINISHED;
+	}
+}
+
+
+uint8_t Motor_tracing_return_MOTORSTATE(uint8_t when_to_stop_white0_black1){
+	
+	float chose_to_stop = 300.0;
+	chose_to_stop = when_to_stop_white0_black1 == 1 ? 100.0 : 200.0;
+	
+	float trace_k = Trace_Get_Status();
+	
+	if (trace_k > 0 && trace_k < 100) {
+		Motor_Turn_Left( SPEED_TURN_I + SPEED_TURN_K * trace_k);
+		return LEFT;
+	}
+	else if (trace_k < 0) {
+		Motor_Turn_Right( SPEED_TURN_I + SPEED_TURN_K * -trace_k );
+		return RIGHT;
+	}
+	else if (trace_k == 0) {
+		Motor_Move_Foward( SPEED_MOVE_FORWARD );
+		return FORWARD;
+	}
+	else if (trace_k == chose_to_stop){
+		Motor_Stop();
+		return HOLD;
+	}
+	else{
+		Motor_Move_Foward( SPEED_MOVE_FORWARD );
+		return FORWARD;
+	}
+
+}
+
+void Motor_tracing( int speed){
+	
+	float trace_k = Trace_Get_Status();
+	
+	if (trace_k > 0 && trace_k < 100) {
+		Motor_Turn_Left( speed + SPEED_TURN_K * trace_k);
+	}
+	else if (trace_k < 0) {
+		Motor_Turn_Right( speed + SPEED_TURN_K * -trace_k );
+	}
+	else if (trace_k == 0 || trace_k == 100.0) {
+		Motor_Move_Foward( speed );
+	}
+
+}
+
+uint8_t Motor_Find_Black(void){
+	
+	float trace_k = Trace_Get_Status();
+	
+	if (trace_k > 100.0){
+		Motor_Move_Foward(SPEED_MOVE_FORWARD);
+		return UNFINISED;
+	}
+	else{
+		Motor_Stop();
+		return FINISHED;
+	}
+	
+}
+
+uint8_t Motor_Turn_Right_To_Black(void){
+	float trace_k = Trace_Get_Status();
+	
+	if (trace_k > 100.0){
+		Motor_Turn_Right(SPEED_TURN_I);
+		return UNFINISED;
+	}
+	else{
+		Motor_Stop();
+		return FINISHED;
+	}
+	
+}
+
+uint8_t Motor_Turn_Left_To_Black(void){
+	float trace_k = Trace_Get_Status();
+	
+	if (trace_k > 100.0){
+		Motor_Turn_Left(SPEED_TURN_I);
+		return UNFINISED;
+	}
+	else{
+		Motor_Stop();
+		return FINISHED;
+	}
+}
+
+uint8_t Motor_Back_To_Black(void){
+	float trace_k = Trace_Get_Status();
+	
+	if (trace_k > 100.0){
+		Motor_Move_Foward(-150);
+		return UNFINISED;
+	}
+	else{
+		Motor_Stop();
+		return FINISHED;
+	}
 }

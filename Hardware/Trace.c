@@ -1,13 +1,16 @@
 #include "stm32f10x.h"                  // Device header
-
 #include "Delay.h"
-typedef enum {
-    CTRL_A = GPIO_Pin_4,
-    CTRL_B = GPIO_Pin_5, 
-    CTRL_C = GPIO_Pin_6,
-	RECEIVE = GPIO_Pin_7
-} Pin; //方便后续替换 因为只是临时的占位
 
+//引脚定义
+#define CTRL_A 		GPIO_Pin_0
+#define CTRL_B 		GPIO_Pin_1
+#define CTRL_C 		GPIO_Pin_10
+#define RECEIVE 	GPIO_Pin_11
+#define CTRL_GPIO 	GPIOB
+#define RECEIVE_GPIO 	GPIOB
+
+float status = 0; //status 表明循迹的状态
+// 请注意更换 Pin 端口的时候 务必要将所有函数的 GPIOA/GPIOB 全部更换
 /*
 
 当数字灰度传感器 接收到 反射光的时候，数字灰度传感器通道上的LED灯会 亮 ，同时输出 低 电平 0
@@ -40,13 +43,13 @@ void Trace_Init(void){
 	GPIO_Initstructure.GPIO_Mode = GPIO_Mode_Out_PP; 
 	GPIO_Initstructure.GPIO_Pin = CTRL_A | CTRL_B | CTRL_C;
 	GPIO_Initstructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_Initstructure);
+	GPIO_Init(CTRL_GPIO, &GPIO_Initstructure);
 	
 	//配置GPIO 接收数字信号
 	GPIO_Initstructure.GPIO_Mode = GPIO_Mode_IPU;  // 数字灰度传感器的背面写了要IPU输入模式
 	GPIO_Initstructure.GPIO_Pin = RECEIVE;
 	GPIO_Initstructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_Initstructure);
+	GPIO_Init(RECEIVE_GPIO, &GPIO_Initstructure);
 	
 	
 }
@@ -59,7 +62,7 @@ void Control_Channel(uint8_t channel, uint8_t index){
 	if(channel >= 1 ){
 		Control_Channel(channel, index + 1);
 	};
-	GPIO_WriteBit(GPIOA, CONTROL[index], number == Bit_RESET ? Bit_RESET : Bit_SET);
+	GPIO_WriteBit(CTRL_GPIO, CONTROL[index], number == Bit_RESET ? Bit_RESET : Bit_SET);
 	//先把 Channel 解码成 二进制代码 比如 7 -> 1 1 1
 	//然后按照 1(GPIO_Pin_6) -> 0 -> 0 (GPIO_Pin_4)的顺序给C B A写入相应的位 以打开我们将要读取的通道
 	
@@ -76,9 +79,9 @@ void Control_Channel(uint8_t channel, uint8_t index){
 }
 
 void Reset_Control(void){
-	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
-	GPIO_ResetBits(GPIOA, GPIO_Pin_5);
-	GPIO_ResetBits(GPIOA, GPIO_Pin_6);
+	GPIO_ResetBits(CTRL_GPIO, CTRL_A);
+	GPIO_ResetBits(CTRL_GPIO, CTRL_B);
+	GPIO_ResetBits(CTRL_GPIO, CTRL_C);
 	// 把 ABC都置 0 （复位） 
 	/* 虽然我还是想不太明白为什么要这样写 因为是想到 可能上一个通道的位控制 可能会影响到 下一个通道的控制
 	所以写了一个所有位的复位，但是我还是不清楚为什么，反正实测下来少了这个函数会发生重位的情况：就是数字灰度传感器1-3 没反应，
@@ -91,7 +94,8 @@ void Trace_Get_Digit(void){
 	for (int i = 1; i < 8; i++){
 		Reset_Control();
 		Control_Channel(i, 0);
-		digital_signals[ i - 1] = GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_7);
+		digital_signals[ i - 1] = GPIO_ReadInputDataBit(RECEIVE_GPIO, RECEIVE);
+		
 	}
 	// 通过控制 A B C 端口控制芯片公共输出的通道1-7，然后再读取相应通道的电位
 	// 1 为 熄灯 即没有检测到黑线（表明其在空白区域）
@@ -102,7 +106,7 @@ void Trace_Get_Digit(void){
 
 float Trace_Get_Status(void){
 	Trace_Get_Digit(); //获取各个通道
-	float status = 0; //status 表明循迹的状态
+
 	int index = 0;
 	for (int i = 0; i < 7; i++){
 		index = digital_signals[i] == 0 ? index + 1 : index;
@@ -117,12 +121,14 @@ float Trace_Get_Status(void){
 	因此离中间点越远则 status 越大
 	*/
 	
-	if (index == 0) return 100.0; //如果没有亮着的传感器，即传感器此时在空白位置上，返回 100.0
+	if (index == 0) return 100.0; //如果没有亮着的传感器，即传感器全在黑线上，返回 100.0
+	if (index == 7) return 200.0; //如果传感器全亮，即传感器全在空白区域，返回200.0
 	
 	status /= (float)index;
-	
-	
-	return status;
+	float temp = status;
+	status = 0;
+	return temp;
 }
+
 
 

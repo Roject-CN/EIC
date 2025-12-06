@@ -29,9 +29,12 @@
   TIM2_CH2 - PA1
 */
 
+#define CORRECT_LTD 2
+#define CORRECT_RTD 4
+#define CORREC_LR 8
 void PWM_Init(void){
 	
-	//开启 GPIOA 和 TIM1 的时钟
+	//开启 GPIOA 和 TIM2 4 的时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
@@ -95,18 +98,18 @@ void PWM_SetCompareLT(uint16_t Compare)
 void PWM_SetCompareLD(uint16_t Compare)
 {
 	// 左下轮 
-	TIM_SetCompare2(TIM4, Compare);		
+	TIM_SetCompare2(TIM4, Compare + CORRECT_LTD);		
 }
 
 void PWM_SetCompareRT(uint16_t Compare)
 {
 	// 右上轮 
-	TIM_SetCompare2(TIM2, Compare);		
+	TIM_SetCompare2(TIM2, Compare + CORREC_LR);		
 }
 
 void PWM_SetCompareRD(uint16_t Compare)
 {
 	// 右下轮 
-	TIM_SetCompare1(TIM2, Compare);		
+	TIM_SetCompare1(TIM2, Compare + CORREC_LR + CORRECT_RTD);		
 }
 
