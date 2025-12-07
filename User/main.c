@@ -241,7 +241,7 @@ void State_running( STATE state){
 			}
 			break;
 		case CARRY5:
-			Motor_tracing(SPEED_MOVE_FORWARD);
+			Motor_tracing(SPEED_MOVE_FORWARD/3);
 			if (start_time_ms - time_ms > 100){
 				OLED_ShowNum(4,10, HCSR04_GetValue() * 100, 6);
 				if (HCSR04_GetValue() <= 5) State_transition(current_state, CARRY6);
