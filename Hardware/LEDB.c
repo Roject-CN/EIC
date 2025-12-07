@@ -1,7 +1,7 @@
 #include "stm32f10x.h"                  // Device header
 
 typedef enum {
-    CTRL = GPIO_Pin_0,
+    CTRL = GPIO_Pin_12,
 } Pin; //方便后续替换 因为只是临时的占位
 
 void LEDB_Init(void){
